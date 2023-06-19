@@ -1,12 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fc_native_image_resize/fc_native_image_resize.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:tmp_path/tmp_path.dart';
 import 'package:path/path.dart' as p;
+import 'package:tmp_path/tmp_path.dart';
 
 void main() {
   runApp(const MyApp());
@@ -46,7 +45,8 @@ class _MyAppState extends State<MyApp> {
                 ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _selectImage,
+          // onPressed: _resizeImageFile,
+          onPressed: _resizeImageData,
           tooltip: 'Select an image',
           child: const Icon(Icons.add),
         ),
@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _selectImage() async {
+  Future<void> _resizeImageFile() async {
     try {
       var result = await FilePicker.platform.pickFiles();
       if (result == null) {
@@ -74,6 +74,45 @@ class _MyAppState extends State<MyApp> {
           format: 'jpeg');
       var imageFile = File(dest);
       var decodedImage = await decodeImageFromList(imageFile.readAsBytesSync());
+      setState(() {
+        _destImg = dest;
+        _imgSizeInfo =
+            'Decoded size: ${decodedImage.width}x${decodedImage.height}';
+      });
+    } catch (err) {
+      setState(() {
+        _destImg = null;
+        _err = err.toString();
+      });
+    }
+  }
+
+  Future<void> _resizeImageData() async {
+    try {
+      final result = await FilePicker.platform.pickFiles();
+      if (result == null) {
+        return;
+      }
+      final src = result.files.single.path!;
+      final dest = tmpPath() + p.extension(src);
+      setState(() {
+        _err = null;
+      });
+      final scrImageFile = File(src);
+      final bytes = scrImageFile.readAsBytesSync();
+
+      final resized = await _nativeImgUtilPlugin.resizeData(
+          data: bytes,
+          width: 300,
+          height: 300,
+          keepAspectRatio: true,
+          format: 'png');
+
+      final dstImageFile = File(dest);
+      await dstImageFile.writeAsBytes(resized.toList());
+      final decodedImage =
+          await decodeImageFromList(dstImageFile.readAsBytesSync());
+
       setState(() {
         _destImg = dest;
         _imgSizeInfo =

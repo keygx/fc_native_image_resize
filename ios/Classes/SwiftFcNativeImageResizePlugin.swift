@@ -7,7 +7,7 @@ public class SwiftFcNativeImageResizePlugin: NSObject, FlutterPlugin {
     let instance = SwiftFcNativeImageResizePlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
-  
+
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? Dictionary<String, Any> else {
       result(FlutterError(code: "InvalidArgsType", message: "Invalid args type", details: nil))
@@ -22,10 +22,10 @@ public class SwiftFcNativeImageResizePlugin: NSObject, FlutterPlugin {
       let height = args["height"] as! Int
       let outputString = args["type"] as! String
       let keepAspectRatio = args["keepAspectRatio"] as! Bool
-      
+
       let quality = args["quality"] as? Int;
       let outputType = outputString == "png" ? OutputType.png : OutputType.jpeg
-      
+
       DispatchQueue.global().async {
         do {
           try ImageUtil.resizeFile(src: srcFile, dest: destFile, width: CGFloat(width), height: CGFloat(height), keepAspectRatio: keepAspectRatio, outType: outputType, quality: quality)
@@ -42,7 +42,35 @@ public class SwiftFcNativeImageResizePlugin: NSObject, FlutterPlugin {
           }
         }
       }
-      
+
+    case "resizeData":
+      // Arguments are enforced on dart side.
+      let data = args["data"] as! FlutterStandardTypedData
+      let width = args["width"] as! Int
+      let height = args["height"] as! Int
+      let outputString = args["type"] as! String
+      let keepAspectRatio = args["keepAspectRatio"] as! Bool
+
+      let quality = args["quality"] as? Int;
+      let outputType = outputString == "png" ? OutputType.png : OutputType.jpeg
+
+      DispatchQueue.global().async {
+        do {
+          let bytes = try ImageUtil.resizeData(data: data.data, width: CGFloat(width), height: CGFloat(height), keepAspectRatio: keepAspectRatio, outType: outputType, quality: quality)
+          DispatchQueue.main.async {
+            result(FlutterStandardTypedData(bytes: bytes))
+          }
+        } catch ResizeError.invalidSrc {
+          DispatchQueue.main.async {
+            result(FlutterError(code: "InvalidSrc", message: "", details: nil))
+          }
+        } catch {
+          DispatchQueue.main.async {
+            result(FlutterError(code: "PluginError", message: error.localizedDescription, details: nil))
+          }
+        }
+      }
+
     default:
       result(FlutterMethodNotImplemented)
     }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'fc_native_image_resize_platform_interface.dart';
 
 class FcNativeImageResize {
@@ -20,6 +22,30 @@ class FcNativeImageResize {
     return FcNativeImageResizePlatform.instance.resizeFile(
         srcFile: srcFile,
         destFile: destFile,
+        width: width,
+        height: height,
+        keepAspectRatio: keepAspectRatio,
+        format: format,
+        quality: quality);
+  }
+
+  ///
+  /// Resizes the [Uint8List] with the given options and saves the results to [Uint8List].
+  ///
+  /// [data] source image data.
+  /// [keepAspectRatio] if true, keeps aspect ratio.
+  /// [format] destination file format. 'png' or 'jpeg'.
+  /// [quality] only applies to 'jpeg' type, 1-100 (100 best quality).
+  Future<Uint8List> resizeData({
+    required Uint8List data,
+    required int width,
+    required int height,
+    required bool keepAspectRatio,
+    required String format,
+    int? quality,
+  }) {
+    return FcNativeImageResizePlatform.instance.resizeData(
+        data: data,
         width: width,
         height: height,
         keepAspectRatio: keepAspectRatio,

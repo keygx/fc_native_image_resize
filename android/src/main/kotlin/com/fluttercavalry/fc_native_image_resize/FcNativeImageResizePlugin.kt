@@ -84,6 +84,50 @@ class FcNativeImageResizePlugin: FlutterPlugin, MethodCallHandler {
                   }
               }
           }
+          "resizeData" -> {
+              val data: ByteArray = call.argument<ByteArray>("data")!! as ByteArray
+              val width = call.argument<Int>("width")!!
+              val height = call.argument<Int>("height")!!
+              val fileTypeString = call.argument<String>("type")!!
+              val keepAspectRatio = call.argument<Boolean>("keepAspectRatio")!!
+              var quality = call.argument<Int?>("quality") ?: 90
+              if (quality < 0) {
+                  quality = 0;
+              } else if (quality > 100) {
+                  quality = 100;
+              }
+              val fileType: Bitmap.CompressFormat
+              if (fileTypeString == "png") {
+                  fileType = Bitmap.CompressFormat.PNG
+                  // Always use lossless PNG.
+                  quality = 100
+              } else {
+                  fileType = Bitmap.CompressFormat.JPEG
+              }
+              try {
+                  val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
+
+                  val oldWidth = bitmap.width
+                  val oldHeight = bitmap.height
+                  val newSize: Pair<Int, Int> = if (keepAspectRatio) {
+                      sizeToFit(oldWidth, oldHeight, width, height)
+                  } else {
+                      Pair(oldWidth, oldHeight)
+                  }
+                  val newBitmap = Bitmap.createScaledBitmap(bitmap, newSize.first, newSize.second, true)
+                  val bos = ByteArrayOutputStream()
+                  newBitmap.compress(fileType, quality, bos)
+                  val bitmapData = bos.toByteArray()
+
+                  Handler(Looper.getMainLooper()).post {
+                      result.success(bitmapData)
+                  }
+              } catch (err: Exception) {
+                  Handler(Looper.getMainLooper()).post {
+                      result.error("Err", err.message, null)
+                  }
+              }
+          }
           else -> result.notImplemented()
       }
   }

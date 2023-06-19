@@ -28,4 +28,23 @@ class MethodChannelFcNativeImageResize extends FcNativeImageResizePlatform {
       'quality': quality,
     });
   }
+
+  @override
+  Future<Uint8List> resizeData({
+    required Uint8List data,
+    required int width,
+    required int height,
+    required bool keepAspectRatio,
+    required String format,
+    int? quality,
+  }) async {
+    return await methodChannel.invokeMethod('resizeData', {
+      'data': data,
+      'width': width,
+      'height': height,
+      'keepAspectRatio': keepAspectRatio,
+      'type': format,
+      'quality': quality,
+    });
+  }
 }
